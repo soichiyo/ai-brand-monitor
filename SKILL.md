@@ -304,12 +304,176 @@ From the badges array:
 - If parsing fails: status = "parse_failed", still save screenshot and raw text
 - Never block the run — always continue to next query
 
+## Adapter: perplexity
+
+Target: Perplexity
+Surface: web_ui
+Input type: llm_prompt (uses config.prompts)
+Requires login: No
+Supports citations: No
+Supports inline badges: No
+Stability: stable
+
+### Execution Steps
+
+For each prompt in config.prompts:
+
+1. Navigate:
+```
+mcp__plugin_playwright_playwright__browser_navigate(
+  url: "https://www.perplexity.ai/search?q={encoded_prompt_text}"
+)
+```
+
+2. Wait 10 seconds for response generation.
+
+3. Extract response:
+```javascript
+async (page) => {
+  await page.waitForTimeout(10000);
+  const answerText = await page.$$eval(
+    '[class*="prose"], [class*="answer"], article, main p',
+    els => els.map(e => e.textContent).join('\n')
+  );
+  return answerText;
+}
+```
+
+4. Take screenshot (fullPage).
+5. Save raw response text.
+
+### Parsing
+
+- target: "perplexity"
+- surface: "web_ui"
+- input_type: "llm_prompt"
+- prompt_category: from prompt.category in config
+- web_access_enabled: true (Perplexity always searches web)
+- prior_context_present: false
+- status: "success" if answerText is non-empty, "no_ai_answer" if empty
+
+### Error Handling
+
+- Empty response after timeout: status = "no_ai_answer"
+- Navigation failure: status = "timeout"
+- Always continue to next prompt
+
+## Adapter: claude
+
+Target: Claude
+Surface: agent
+Input type: llm_prompt (uses config.prompts)
+Requires login: No
+Supports citations: No
+Supports inline badges: No
+Stability: stable
+
+### Execution Steps
+
+For each prompt in config.prompts:
+
+1. Spawn a clean agent with NO project context:
+```
+Agent(
+  description: "Brand observation: {prompt.id}",
+  subagent_type: "general-purpose",
+  prompt: "You are a fresh assistant with NO prior context about any brand or service. Do NOT read any project files. Answer the following question naturally in {config.locale.language}.\n\nQuestion: {prompt.text}\n\nProvide a helpful, detailed answer."
+)
+```
+
+2. Capture the agent's response text.
+3. No screenshot needed (no browser).
+4. Save raw response text to file.
+
+### Parsing
+
+- target: "claude"
+- surface: "agent"
+- input_type: "llm_prompt"
+- prompt_category: from prompt.category in config
+- web_access_enabled: false (Claude agent has no web access)
+- prior_context_present: false (clean agent)
+- status: "success" if response is non-empty
+
+### Notes
+
+- Run prompts sequentially (not parallel) to avoid context bleed between agents
+- Agent responses are text-only, no screenshots
+- This tests Claude's training data knowledge, NOT Claude.ai web search
+- Add caveat in report: "Claude agent observation ≠ Claude.ai consumer web experience"
+
+## Adapter: chatgpt_web
+
+Target: ChatGPT Web
+Surface: web_ui
+Input type: llm_prompt (uses config.prompts)
+Requires login: No (limited queries without login)
+Supports citations: No
+Supports inline badges: No
+Stability: stable
+
+### Execution Steps
+
+For each prompt in config.prompts:
+
+1. Navigate to new chat:
+```
+mcp__plugin_playwright_playwright__browser_navigate(url: "https://chatgpt.com/")
+```
+
+2. Wait 3 seconds for page load.
+
+3. Find input and submit prompt:
+```javascript
+async (page) => {
+  await page.waitForTimeout(3000);
+  const input = await page.$('#prompt-textarea');
+  if (!input) return JSON.stringify({ error: 'input_not_found' });
+  
+  await input.click();
+  await page.waitForTimeout(500);
+  await page.keyboard.type('{prompt_text}', { delay: 30 });
+  await page.waitForTimeout(500);
+  await page.keyboard.press('Enter');
+  
+  // Wait for response
+  await page.waitForTimeout(20000);
+  
+  const responseText = await page.evaluate(() => {
+    const msgs = document.querySelectorAll('[data-message-author-role="assistant"]');
+    if (msgs.length > 0) return msgs[msgs.length - 1].innerText;
+    const articles = document.querySelectorAll('article, [class*="markdown"]');
+    if (articles.length > 0) return articles[articles.length - 1].innerText;
+    return '';
+  });
+  
+  return responseText;
+}
+```
+
+4. Take screenshot.
+5. Save raw response text.
+
+### Parsing
+
+- target: "chatgpt_web"
+- surface: "web_ui"
+- input_type: "llm_prompt"
+- prompt_category: from prompt.category in config
+- web_access_enabled: false (without login, Browse mode is off)
+- prior_context_present: false (new chat each time)
+
+### Error Handling
+
+- Login wall detected (page contains "ログイン" prominently): status = "login_required"
+- Input not found: status = "parse_failed"
+- Empty response after 20s: status = "no_ai_answer"
+- Rate limit: status = "blocked", status_detail = "rate_limited"
+- Always navigate to fresh chatgpt.com/ for each prompt (prevents conversation context)
+
 ## Adapter Sections (Placeholder)
 
 The following adapter sections will be added in subsequent tasks:
-- perplexity adapter
-- claude adapter
-- chatgpt_web adapter
 - gemini_web adapter
 - google_aio adapter
 
