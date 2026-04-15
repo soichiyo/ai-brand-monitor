@@ -787,18 +787,18 @@ When user runs `/ai-brand-monitor init`:
 4. Ask: "Who are your main competitors? (name:domain format, comma-separated, or skip)" → competitors
 5. Ask: "What language should AI responses be in?" → locale.language (default: ja)
 6. Ask: "What country for Google search?" → locale.country (default: JP)
-7. Ask: "Enter your search queries (one per line, empty line to finish)" → queries
-8. Ask: "Enter your LLM prompts with categories. Format: category|prompt text (one per line, empty to finish)" → prompts
-9. Ask: "Which platforms to monitor?" → targets (suggest all 6, explain stable vs experimental)
-10. Write config.yaml to the skill directory
-11. Confirm: "Config saved! Run `/ai-brand-monitor run` to start your first observation."
+7. Ask: "観測したい検索クエリを入力してください（1行に1つ、空行で終了）" → queries
+8. Ask: "LLMに聞くプロンプトを入力してください。形式: カテゴリ|プロンプト文（1行に1つ、空行で終了）" → prompts
+9. Ask: "どのプラットフォームを観測しますか？" → targets（全6つを推奨、安定/実験的の違いを説明）
+10. config.yaml をスキルのディレクトリに保存
+11. 確認: "設定を保存しました！`/ai-brand-monitor run` で最初の観測を始められます。"
 
 ## Google Sheets Export (Optional)
 
 When `output.sheets.enabled: true` in config:
 
 1. Check if `gog` CLI is available: `which gog`
-2. If not available: warn "Google Sheets export requires gog CLI (Google API CLI tool). Skipping."
+2. If not available: warn "Google Sheets出力にはgog CLI（Google API向けCLIツール）が必要です。スキップします。"
 3. If available:
    - If `output.sheets.spreadsheet_id` is set: append to existing spreadsheet
    - If not set: create new spreadsheet titled "AI Brand Monitor - {brand.name}"

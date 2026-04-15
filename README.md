@@ -1,174 +1,185 @@
 # ai-brand-monitor
 
-Monitor your brand's visibility across AI search surfaces.
+自社ブランドが、AI検索でどう扱われているかを定点観測する Claude Code スキルです。
 
-Track how your brand appears when users ask ChatGPT, Gemini, Perplexity, Claude, and Google AI about your product category. Know where you're mentioned, where you're missing, and who beats you.
+ChatGPT・Gemini・Perplexity・Claude・Google AIモードに対して「おすすめのサービスは？」と聞いたとき、自社が紹介されているか、競合と比べてどの位置にいるかを一括でチェックし、レポートにまとめます。
 
-## What This Does
+## できること
 
-This Claude Code Skill runs observations across 6 AI platforms and generates a structured report showing:
+- 6つのAIプラットフォームに対して、検索クエリやプロンプトを自動で投げる
+- 自社ブランドが言及されているか、何番目に紹介されているかを記録
+- Google AIモードの「引用元サイト」ランキング（右サイドバー）を取得
+- 競合サービスの言及頻度を集計
+- 前回の観測結果と比較して、変化を検出
+- Markdown レポート・CSV・スクリーンショットを出力
 
-- Whether your brand is mentioned in AI-generated responses
-- Your position relative to competitors
-- Which sources cite your website (Google AI Mode citation sidebar)
-- Accuracy of AI descriptions of your brand
-- Changes between observation runs
+## セットアップ
 
-## Quick Start
+### 必要なもの
 
-### Prerequisites
+- Claude Code がインストール済みであること
+- Claude Code の Playwright MCP プラグインが有効であること
+- `jq` がインストール済みであること（CSV出力に使います）
 
-- [Claude Code](https://docs.anthropic.com/en/docs/claude-code) installed
-- Playwright MCP plugin enabled in Claude Code (see Claude Code documentation)
+### 手順
 
-### Setup (5 minutes)
+1. このリポジトリを `.claude/skills/` にクローンします:
+```bash
+cd ~/.claude/skills
+git clone https://github.com/YOUR_USERNAME/ai-brand-monitor.git
+```
+（`YOUR_USERNAME` は自分のGitHubユーザー名に置き換えてください）
 
-1. Clone into your Claude Code skills directory:
-   ```bash
-   cd ~/.claude/skills
-   # Replace YOUR_USERNAME with your GitHub username
-   git clone https://github.com/YOUR_USERNAME/ai-brand-monitor.git
-   ```
-
-2. Copy and edit the config:
-   ```bash
-   cd ai-brand-monitor
-   cp examples/config.example.yaml config.yaml
-   # Edit config.yaml with your brand details
-   ```
-
-3. Run your first observation:
-   ```
-   /ai-brand-monitor run
-   ```
-
-Or use the interactive setup:
-   ```
-   /ai-brand-monitor init
-   ```
-
-## Configuration
-
-Edit `config.yaml` with your brand details:
-
-```yaml
-brand:
-  name: "Your Brand"           # Exact name to search for
-  domain: "yourbrand.com"      # Domain for citation matching
-  aliases: ["YourBrand"]       # Alternative names/spellings
-
-competitors:                    # Optional: known competitors
-  - name: "Competitor A"
-    domain: "competitor-a.com"
-
-locale:
-  language: "ja"               # AI response language
-  country: "JP"                # Google search country
-
-queries:                        # Google search queries
-  - "your category"
-  - "your category comparison"
-
-prompts:                        # Questions to ask LLMs
-  - id: P1
-    text: "What are the best services for [your category]?"
-    category: purchase_intent
-  - id: P2
-    text: "Tell me about [Your Brand]"
-    category: brand_direct      # Flagged as prompted recall
-
-targets:                        # Platforms to monitor
-  - google_ai_mode             # Google AI Mode (stable)
-  - google_aio                 # Google AIO/SERP (stable)
-  - perplexity                 # Perplexity (stable)
-  - chatgpt_web                # ChatGPT (stable, no login)
-  - claude                     # Claude (stable, no browser)
-  - gemini_web                 # Gemini (experimental, login required)
+2. 設定ファイルをコピーして、自社の情報に書き換えます:
+```bash
+cd ai-brand-monitor
+cp examples/config.example.yaml config.yaml
 ```
 
-### Prompt Categories
+3. `config.yaml` を開いて、ブランド名・ドメイン・クエリ・プロンプトを編集します（後述）
 
-| Category | Description | Note |
-|----------|-------------|------|
-| `purchase_intent` | Buying/comparison queries | Core visibility test |
-| `info_gathering` | Educational queries | Tests awareness |
-| `brand_direct` | Queries containing your brand name | Flagged as "prompted recall" |
-| `neutral` | Generic category queries | Most natural test |
+4. Claude Code で実行します:
+```
+/ai-brand-monitor run
+```
 
-## Platforms
+対話形式でゼロから設定ファイルを作ることもできます:
+```
+/ai-brand-monitor init
+```
 
-### Stable
+## 設定ファイルの書き方
 
-| Platform | Method | Login | What It Captures |
-|----------|--------|-------|-----------------|
-| Google AI Mode | Playwright | No | AI response, citation sidebar ranking, inline badges |
-| Google AIO | Playwright | No | AIO display, brand mention, organic rank, PAA |
-| Perplexity | Playwright | No | AI response, brand mention, competitor analysis |
-| ChatGPT | Playwright | No* | AI response, brand mention analysis |
-| Claude | Agent spawn | No | AI response from training data (no web search) |
+`config.yaml` を編集します。`#` から始まる行はコメント（メモ）なので、自由に書き換えて大丈夫です。
 
-*ChatGPT works without login but has query limits.
+```yaml
+# --- ブランド情報 ---
+brand:
+  name: "自社サービス名"           # AI回答の中からこの名前を探します
+  domain: "example.com"           # 引用元URLにこのドメインが含まれるかチェックします
+  aliases: ["別名", "English Name"]  # 略称や英語名があれば追加
 
-### Experimental
+# --- 競合（任意） ---
+competitors:
+  - name: "競合A"
+    domain: "competitor-a.com"
+  - name: "競合B"
+    domain: "competitor-b.com"
 
-| Platform | Method | Login | What It Captures |
-|----------|--------|-------|-----------------|
-| Gemini Web | Playwright | Yes | AI response with Google Search grounding |
+# --- 言語・地域 ---
+locale:
+  language: "ja"    # AIへの質問・回答の言語
+  country: "JP"     # Google検索の対象国
 
-Experimental targets may fail due to login requirements, rate limits, or UI changes. Failures are skipped without blocking the run.
+# --- 検索クエリ（Google AIO・AIモード用） ---
+queries:
+  - "デジタル名刺"
+  - "デジタル名刺 比較"
+  - "デジタル名刺 おすすめ"
 
-## Output
+# --- LLMに聞くプロンプト ---
+prompts:
+  - id: P1
+    text: "デジタル名刺のおすすめサービスを教えてください"
+    category: purchase_intent       # 購買検討系
+  - id: P2
+    text: "NFC型のデジタル名刺でおすすめはどれですか"
+    category: purchase_intent
+  - id: P3
+    text: "自社サービス名の評判を教えてください"
+    category: brand_direct          # ブランド名指し（誘導された想起として注記されます）
 
-Each run creates a timestamped directory:
+# --- 観測対象 ---
+targets:
+  - google_ai_mode    # Google AIモード
+  - google_aio        # Google通常検索のAI Overview
+  - perplexity        # Perplexity
+  - chatgpt_web       # ChatGPT
+  - claude            # Claude（ブラウザ不要）
+  - gemini_web        # Gemini Web版（Googleログインが必要、実験的）
+```
+
+### プロンプトのカテゴリについて
+
+| カテゴリ | 意味 | 例 |
+|---------|------|-----|
+| `purchase_intent` | 購買検討・比較系 | 「おすすめを教えて」「比較して」 |
+| `info_gathering` | 情報収集系 | 「メリット・デメリットは？」「手順を教えて」 |
+| `brand_direct` | ブランド名を含む質問 | 「〇〇の評判は？」 |
+| `neutral` | ブランド名を含まない一般的な質問 | 「選ぶポイントは？」 |
+
+`brand_direct` のプロンプトは、レポート上で「ブランド名を直接聞いているので、自然な想起とは異なります」と注記されます。
+
+## 観測対象のプラットフォーム
+
+| プラットフォーム | ログイン | 安定性 | 取得できる情報 |
+|---------------|---------|-------|-------------|
+| Google AIモード | 不要 | 安定 | AI回答テキスト、引用元サイトランキング、インライン引用バッジ |
+| Google AIO | 不要 | 安定 | AI Overview表示状況、ブランド言及、オーガニック順位、PAA |
+| Perplexity | 不要 | 安定 | AI回答テキスト、ブランド言及、競合分析 |
+| ChatGPT | 不要* | 安定 | AI回答テキスト、ブランド言及分析 |
+| Claude | 不要 | 安定 | AI回答テキスト（訓練データからの回答。Web検索なし） |
+| Gemini Web | 必要 | 実験的 | AI回答テキスト（Google検索による情報補完あり） |
+
+*ChatGPTはログインなしでも使えますが、回数に制限があります。
+
+Gemini Webは実験的な対象です。Googleログインが必要で、ログインできない場合はスキップされます（他の観測は止まりません）。
+
+## 出力されるもの
+
+観測のたびに、タイムスタンプ付きのフォルダが作られます:
 
 ```
 outputs/
   20260415-1430/
-    reports/report.md         # Human-readable report
-    raw/observations.jsonl    # Raw observation data
-    raw/citations.jsonl       # Citation sidebar data
-    raw/entity_mentions.jsonl # Competitor mentions
-    csv/observations.csv      # Spreadsheet-ready data
+    reports/report.md          # 観測レポート（人間が読む用）
+    raw/observations.jsonl     # 観測データ（機械処理用）
+    raw/citations.jsonl        # AIモードの引用元データ
+    raw/entity_mentions.jsonl  # 競合サービスの言及データ
+    csv/observations.csv       # スプレッドシートに取り込める形式
     csv/citations.csv
-    screenshots/              # Page screenshots
-    raw_text/                 # Raw AI response text
+    screenshots/               # 各プラットフォームのスクリーンショット
+    raw_text/                  # AIの回答テキスト原文
 ```
 
-### Google Sheets (Optional)
+### Google Sheetsへの出力（任意）
 
-Set `output.sheets.enabled: true` in config. Requires gog CLI (Google API CLI tool) for Google Sheets API access.
+`config.yaml` で `output.sheets.enabled: true` にすると、Google Sheetsにも出力できます。gog CLI（Google API向けCLIツール）のインストールが別途必要です。
 
-## Measurement Caveats
+## 注意事項
 
-This tool provides observation snapshots, not definitive rankings:
+この観測は「ある時点のスナップショット」であり、確定的なランキングではありません:
 
-1. AI responses are nondeterministic -- the same query can produce different results
-2. Citation sidebar order may vary by session and personalization
-3. Prompts with `brand_direct` category measure prompted recall, not natural visibility
-4. Claude agent observations test training data knowledge, not Claude.ai web search
-5. Experimental targets may have incomplete data
-6. Observations reflect a single geographic location and browser profile
+1. AIの回答は毎回変わります。同じ質問でも違う結果が出ることがあります
+2. Google AIモードの引用元ランキングは、セッションやパーソナライゼーションで変動します
+3. `brand_direct` カテゴリのプロンプトは、ブランド名を直接聞いているため、自然な想起テストではありません
+4. Claudeの観測はClaude Codeのエージェント経由です。Claude.aiのWeb版とは異なる結果になることがあります
+5. 実験的な対象（Gemini Web）はデータが不完全になることがあります
 
-For reliable trend analysis, run monthly and compare across multiple observations.
+信頼性のあるトレンド分析には、月1回の定期観測をおすすめします。
 
-## FAQ
+### 利用規約について
 
-Q: How often should I run this?
-A: Monthly is recommended. The tool supports comparing against previous runs.
+このツールはブラウザの自動操作を通じて各AIプラットフォームの回答を取得します。各プラットフォームの利用規約によっては、自動化されたアクセスが制限されている場合があります。ご利用の際は各プラットフォームの利用規約を確認の上、自己責任でお使いください。月に数回・数クエリ程度の個人利用を想定しており、大量のリクエストを送る用途には対応していません。
 
-Q: Why is Gemini experimental?
-A: Gemini Web requires Google login and is sensitive to account state. The web version (with Google Search grounding) gives much better results than the API version.
+## よくある質問
 
-Q: ChatGPT shows different results than expected?
-A: Without login, ChatGPT may use a smaller model. Logged-in observations with GPT-4o + Browse mode will differ.
+Q: どのくらいの頻度で観測すべき？
+A: 月1回がおすすめです。前回との差分比較に対応しています。
 
-Q: My brand isn't mentioned anywhere. What should I do?
-A: Focus on creating authoritative comparison/review content that AI models can cite. Structured data and third-party mentions help AI models learn about your brand.
+Q: Geminiが「実験的」なのはなぜ？
+A: Gemini Web版はGoogleログインが必要で、ログイン状態に依存します。ただし、Web版（Google検索による情報補完あり）はAPI版（情報補完なし）とは全く異なる結果を返すため、観測する価値は高いです。
 
-## Contributing
+Q: ChatGPTの結果が期待と違う？
+A: ログインなしの場合、小さいモデルが使われることがあります。ログイン状態でGPT-4o + Browse modeをONにした場合とは結果が異なります。
 
-Issues and PRs welcome. This project follows standard GitHub workflow.
+Q: 自社ブランドがどこにも出てこない場合は？
+A: まずは、AIが引用しやすい比較記事・まとめ記事を作成することが有効です。構造化データの整備や、第三者サイトでの言及を増やすことも効果的です。
 
-## License
+## コントリビューション
+
+Issue や PR を歓迎します。
+
+## ライセンス
 
 MIT
