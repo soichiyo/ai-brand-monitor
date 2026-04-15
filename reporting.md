@@ -175,7 +175,7 @@ Header: mention_id,observation_id,entity_name,entity_type,mention_context,rank_i
 
 Same jq pattern for entity_mentions.jsonl.
 
-Note: CSV export requires `jq` to be installed. If jq is not available, skip CSV export and note in the run summary.
+Note: CSV export requires `jq` to be installed (Prerequisites参照).
 
 ## Interactive Init (/ai-brand-monitor init)
 
