@@ -1,101 +1,81 @@
 ---
 name: ai-brand-monitor
-description: Monitor brand visibility across AI search surfaces (Google AI Mode, AIO, ChatGPT, Gemini, Perplexity, Claude). Tracks mentions, citations, competitor presence, and generates reports. Run with /ai-brand-monitor.
+description: 主要なAI検索エンジン（Google AIモード/AIO, ChatGPT, Gemini, Perplexity, Claude）における自社ブランドの露出状況を監視し、言及・引用・競合の存在を追跡してレポートを生成します。`/ai-brand-monitor` で実行します。
 ---
 
-# AI Brand Monitor
+# AI Brand Monitor (AIブランドモニター)
 
-## Trigger
+## トリガー
 
-Activate when user says: /ai-brand-monitor, "run brand monitor", "check AI visibility", "AI brand observation"
+ユーザーが以下のように発言した時に起動します：
+- `/ai-brand-monitor`
+- "ブランドモニターを実行して"
+- "AIでの認知度をチェックして"
+- "AIブランド観測を開始"
 
-## Prerequisites
+## 前提条件
 
-- Playwright MCP plugin must be enabled in Claude Code (provides browser automation capabilities: page navigation, JavaScript execution, screenshots, viewport resizing)
-- `jq` must be installed for CSV export (`brew install jq` or equivalent)
-- For Gemini Web target: user must be logged into Google in the Playwright browser
-- For Google Sheets export (optional): gog CLI (Google API CLI tool) must be installed
+- **Playwright MCPプラグイン**: ブラウザ操作（ページ遷移、JS実行、スクリーンショット、ビューポート変更）のために必須です。
+- **jq**: CSVエクスポートに使用します（`brew install jq` 等でインストール済みであること）。
+- **Googleログイン**: Gemini Webを対象にする場合、PlaywrightブラウザでGoogleアカウントにログインしている必要があります。
+- **gog CLI** (任意): Google Sheetsへのエクスポートを行う場合に必要です。
 
-## Commands
+## コマンド
 
-- `/ai-brand-monitor run` — Run full observation
-- `/ai-brand-monitor init` — Interactive config setup (creates config.yaml)
+- `/ai-brand-monitor run` — 観測のフル実行
+- `/ai-brand-monitor init` — 対話形式の設定セットアップ（`config.yaml` の作成）
 
-## Run Workflow
+## 実行ワークフロー
 
-### Step 1: Load Config
+### ステップ 1: 設定の読み込み
 
-1. Look for `config.yaml` in the skill directory (the directory containing this SKILL.md)
-2. If not found, check if user provided a path. If neither exists, suggest running `/ai-brand-monitor init`
-3. Read the YAML file using the Read tool
-4. Validate required fields:
-   - `brand.name` — must be non-empty string
-   - `brand.domain` — must be non-empty string
-   - `queries` — must be non-empty array
-   - `prompts` — must be non-empty array
-   - `targets` — must be non-empty array, values must be one of: google_aio, google_ai_mode, perplexity, chatgpt_web, gemini_web, claude
-5. Set defaults for missing optional fields:
-   - `brand.aliases` → []
-   - `competitors` → []
-   - `locale.language` → "ja"
-   - `locale.country` → "JP"
-   - `output.dir` → "./outputs"
+1. スキルディレクトリ（この `SKILL.md` がある場所）から `config.yaml` を探します。
+2. 見つからない場合は、ユーザーが指定したパスを確認します。いずれもない場合は `/ai-brand-monitor init` の実行を提案します。
+3. YAMLファイルを読み込み、以下の必須項目をバリデートします：
+   - `brand.name` — 空でない文字列
+   - `brand.domain` — 空でない文字列
+   - `queries` — 空でない配列
+   - `prompts` — 空でない配列
+   - `targets` — `google_aio`, `google_ai_mode`, `perplexity`, `chatgpt_web`, `gemini_web`, `claude` のいずれかを含む空でない配列
 
-### Step 2: Initialize Run
+### ステップ 2: 実行の初期化
 
-1. Generate run_id: format YYYYMMDD-HHmm (e.g., 20260415-1430)
-2. Create output directory structure using Bash:
-```bash
-RUN_DIR="{output.dir}/{run_id}"
-mkdir -p "$RUN_DIR"/{raw,reports,csv,screenshots,raw_text}
-```
-3. Write run metadata to `raw/run.json`:
-```json
-{
-  "run_id": "{run_id}",
-  "started_at": "{ISO datetime}",
-  "config_hash": "{SHA256 of config.yaml}",
-  "version": "0.1.0"
-}
-```
+1. `run_id` を生成します（形式: `YYYYMMDD-HHmm`）。
+2. 出力ディレクトリ構造を Bash で作成します：
+   `{output.dir}/{run_id}/{raw,reports,csv,screenshots,raw_text}`
+3. 実行メタデータを `raw/run.json` に書き込みます。
 
-### Step 3: Execute Observations
+### ステップ 3: 観測の実行
 
-For each target in `config.targets`, in order:
+`config.targets` に指定された各ターゲットに対して順番に実行します：
 
-1. Determine input type:
-   - `google_aio`, `google_ai_mode` → use `config.queries` (input_type: search_query)
-   - `perplexity`, `chatgpt_web`, `gemini_web`, `claude` → use `config.prompts` (input_type: llm_prompt)
+1. 入力タイプの決定：
+   - `google_aio`, `google_ai_mode` → `config.queries` を使用
+   - `perplexity`, `chatgpt_web`, `gemini_web`, `claude` → `config.prompts` を使用
 
-2. For each input (query or prompt):
-   - Generate observation_id: `{run_id}_{target}_{input_id}`
-     - For queries: input_id = sanitized query text (spaces→underscores, max 30 chars)
-     - For prompts: input_id = prompt.id (e.g., purchase-digital-card)
-   - Call the target adapter (詳細は adapters.md を参照)
-   - The adapter returns a ParsedObservation or an error status
-   - On success: write observation to JSONL (形式は data-model.md を参照), save artifacts
-   - On failure: write observation with error status, log warning, continue
+2. 各入力（クエリまたはプロンプト）の処理：
+   - 各ターゲットのアダプターを呼び出します（詳細は `adapters.md` を参照）。
+   - 成功時：JSONLへの書き込みとアーティファクトの保存（詳細は `data-model.md` を参照）。
+   - 失敗時：エラー状態を記録し、ログ警告を出して次へ進みます。
 
-3. Report progress: "Running {target}... {n}/{total} inputs complete"
+3. 進捗報告: 「{target} を実行中... {n}/{total} 完了」と表示します。
 
-4. After each target completes: "{target}: {success_count} succeeded, {skip_count} skipped"
+### ステップ 4: 後処理とレポート生成
 
-### Step 4: Post-Processing
+全てのターゲットが完了した後：
+1. 全ての観測結果に対してブランド/競合のマッチングを実行します（詳細は `reporting.md` を参照）。
+2. Markdownレポートを生成します。
+3. CSVファイルをエクスポートします。
+4. 前回の実行結果がある場合は、比較セクションを追加します。
 
-After all targets complete:
-1. Run brand/competitor matching on all observations (詳細は reporting.md を参照)
-2. Generate Markdown report (詳細は reporting.md を参照)
-3. Export CSV files (詳細は reporting.md を参照)
-4. If previous run exists, add comparison section to report
+### ステップ 5: 実行サマリーの表示
 
-### Step 5: Summary
+ユーザーに最終結果を報告します（詳細は `reporting.md` の「Run Summary Output」を参照）。
 
-実行結果をユーザーに報告する（出力フォーマットは reporting.md の「Run Summary Output」セクションを参照）
+## リファレンスファイル
 
-## Reference Files
+各フェーズの詳細な手順については、必要に応じて以下のファイルを読み込んでください：
 
-The following files contain detailed instructions for each phase. Read them as needed during execution:
-
-- `adapters.md` — 6つのプラットフォーム別観測手順（Playwright操作、Agent起動）
-- `data-model.md` — JSONL出力形式、フィールド定義、出力ディレクトリ構造
-- `reporting.md` — ブランドマッチング、レポート生成、CSV出力、init、Sheets連携
+- `adapters.md` — 6つのプラットフォーム別のブラウザ操作・エージェント起動手順
+- `data-model.md` — JSONL出力形式、フィールド定義、ディレクトリ構造
+- `reporting.md` — ブランドマッチング、レポート生成、CSV出力、Sheets連携
