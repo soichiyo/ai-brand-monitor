@@ -1,4 +1,4 @@
-# ai-brand-monitor 設定ファイル
+# ai-brand-monitor 設定ファイル例
 # このファイルを config.yaml にコピーして編集してください。
 # cp examples/config.example.yaml config.yaml
 
@@ -7,21 +7,21 @@
 # domain: 引用リンク検出に使うドメイン
 # aliases: 略称・別表記など（部分一致で検出）
 brand:
-  name: "アクメカード"
-  domain: "acme-card.example.com"
+  name: "オーラサウンド"
+  domain: "aurasound.example.com"
   aliases:
-    - "Acme Card"
-    - "ACME CARD"
-    - "acmecard"
+    - "AuraSound"
+    - "Aura Sound"
+    - "オーラサウンド社"
 
 # --- 競合ブランド ---
 # 自社と同じ検索結果に出てくる競合を登録
 # AI応答内での言及頻度・順位を比較できる
 competitors:
-  - name: "ベータカード"
-    domain: "beta-card.example.com"
-  - name: "ガンマカード"
-    domain: "gamma-card.example.com"
+  - name: "ノイズマスター"
+    domain: "noisemaster.example.com"
+  - name: "ソニックブースト"
+    domain: "sonicboost.example.com"
 
 # --- ロケール ---
 # language: 検索・プロンプトの言語（ISO 639-1）
@@ -34,9 +34,9 @@ locale:
 # Google AIO / AI Mode に送る検索クエリ
 # ユーザーが実際に検索しそうなフレーズを設定する
 queries:
-  - "法人向け 名刺 デジタル おすすめ"
-  - "デジタル名刺 比較 2026"
-  - "アクメカード 評判"
+  - "ノイズキャンセリングヘッドフォン おすすめ 2026"
+  - "最新 ワイヤレスヘッドフォン 比較"
+  - "オーラサウンド 評判"
 
 # --- プロンプト ---
 # ChatGPT / Gemini / Claude / Perplexity に送る構造化プロンプト
@@ -48,16 +48,16 @@ queries:
 #   brand_direct     - ブランド名を直接指定した質問
 #   neutral          - 特定意図のない一般的な質問
 prompts:
-  - id: "purchase-digital-card"
-    text: "法人向けデジタル名刺サービスを導入したいです。おすすめのサービスを教えてください。"
+  - id: "purchase-headphones"
+    text: "仕事に集中するために、最強のノイズキャンセリングヘッドフォンを買いたいです。今のおすすめは何ですか？"
     category: purchase_intent
 
   - id: "brand-review"
-    text: "アクメカードというデジタル名刺サービスについて教えてください。評判や特徴を知りたいです。"
+    text: "オーラサウンドというブランドのヘッドフォンについて教えてください。特に音質と装着感の評判を知りたいです。"
     category: brand_direct
 
-  - id: "compare-services"
-    text: "デジタル名刺サービスの主要なサービスを比較して、それぞれの特徴を教えてください。"
+  - id: "compare-flagships"
+    text: "最新のフラッグシップヘッドフォンの主要なモデルを比較して、それぞれのメリット・デメリットを教えてください。"
     category: info_gathering
 
 # --- 対象AI ---
@@ -68,7 +68,7 @@ prompts:
 #   perplexity      - Perplexity（Web検索AI）
 #   chatgpt_web     - ChatGPT Web版
 #   gemini_web      - Gemini Web版
-#   claude          - Claude Agent（訓練データのみ、Web検索なし）
+#   claude          - Claude Web版 / Agent
 targets:
   - google_aio
   - google_ai_mode
@@ -79,8 +79,7 @@ targets:
 
 # --- 出力設定 ---
 # dir: 出力先ディレクトリ（config.yaml からの相対パス）
-# All output formats (JSONL, CSV, Markdown report, screenshots) are always generated
-# sheets.enabled: Google Sheetsへのエクスポートを有効にする
+# sheets.enabled: Google Sheetsへのエクスポートを有効にする（要 gog CLI）
 output:
   dir: "outputs/"
   sheets:
