@@ -90,11 +90,7 @@ After all targets complete:
 
 ### Step 5: Summary
 
-Report to user:
-- Run ID and output directory path
-- Per-target status summary
-- Brand mention rate
-- Path to report file
+実行結果をユーザーに報告する（出力フォーマットは reporting.md の「Run Summary Output」セクションを参照）
 
 ## Reference Files
 
