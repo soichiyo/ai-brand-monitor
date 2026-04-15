@@ -471,13 +471,163 @@ async (page) => {
 - Rate limit: status = "blocked", status_detail = "rate_limited"
 - Always navigate to fresh chatgpt.com/ for each prompt (prevents conversation context)
 
-## Adapter Sections (Placeholder)
+## Adapter: gemini_web
 
-The following adapter sections will be added in subsequent tasks:
-- gemini_web adapter
-- google_aio adapter
+Target: Gemini Web
+Surface: web_ui
+Input type: llm_prompt (uses config.prompts)
+Requires login: Yes (Google account)
+Supports citations: No
+Supports inline badges: No
+Stability: experimental
 
-Each adapter section will contain step-by-step Playwright/Agent instructions.
+### Execution Steps
+
+For each prompt in config.prompts:
+
+1. Navigate:
+```
+mcp__plugin_playwright_playwright__browser_navigate(url: "https://gemini.google.com/app")
+```
+
+2. Wait 3 seconds. Check if logged in:
+```javascript
+async (page) => {
+  await page.waitForTimeout(3000);
+  const pageText = await page.evaluate(() => document.body.innerText.substring(0, 500));
+  const hasEditor = await page.$('.ql-editor, [contenteditable="true"]');
+  const isLoggedIn = hasEditor && !pageText.includes('ログイン') && !pageText.includes('Sign in');
+  return JSON.stringify({ isLoggedIn });
+}
+```
+
+3. If NOT logged in: set status = "login_required", status_detail = "Gemini requires Google login. Log in via browser and retry.", skip this target entirely (don't try remaining prompts).
+
+4. If logged in, submit prompt:
+```javascript
+async (page) => {
+  const editor = await page.$('.ql-editor, [contenteditable="true"]');
+  await editor.click();
+  await page.waitForTimeout(300);
+  await page.keyboard.type('{prompt_text}', { delay: 15 });
+  await page.waitForTimeout(300);
+  await page.keyboard.press('Enter');
+  
+  await page.waitForTimeout(25000); // Gemini is slower
+  
+  const text = await page.evaluate(() => document.body.innerText);
+  return text;
+}
+```
+
+5. Take screenshot.
+6. Save raw response text.
+
+### Parsing
+
+- target: "gemini_web"
+- surface: "web_ui"
+- input_type: "llm_prompt"
+- web_access_enabled: true (Gemini Web has Google Search grounding)
+- prior_context_present: false (new chat per prompt)
+
+### Important Notes
+
+- This target is EXPERIMENTAL. Failures do not block the run.
+- Gemini Web with grounding gives fundamentally different results from Gemini API without grounding.
+- Navigate to fresh /app for each prompt to avoid conversation context.
+- Report warning: "Gemini Web is experimental and requires Google login."
+
+## Adapter: google_aio
+
+Target: Google AIO (AI Overview in regular SERP)
+Surface: web_ui
+Input type: search_query (uses config.queries)
+Requires login: No
+Supports citations: No
+Supports inline badges: No
+Stability: stable
+
+### Execution Steps
+
+For each query in config.queries:
+
+1. Navigate to regular Google Search:
+```
+mcp__plugin_playwright_playwright__browser_navigate(
+  url: "https://www.google.co.jp/search?q={encoded_query}&hl={config.locale.language}&gl={config.locale.country}"
+)
+```
+
+2. Wait 3 seconds.
+
+3. Extract AIO status, organic results, and PAA:
+```javascript
+async (page) => {
+  await page.waitForTimeout(3000);
+  const content = await page.content();
+  
+  // AIO detection
+  const hasAIO = content.includes('AI による概要') || content.includes('AIによる概要') || content.includes('AI Overview');
+  const aioFailed = content.includes('この検索では AI による概要を表示できません') || content.includes('AI による概要を生成できません');
+  let aioStatus;
+  if (!hasAIO) aioStatus = 'not_available';
+  else if (aioFailed) aioStatus = 'generation_failed';
+  else aioStatus = 'displayed';
+  
+  // AIO text (if displayed)
+  let aioText = '';
+  if (aioStatus === 'displayed') {
+    const bodyText = await page.evaluate(() => document.body.innerText);
+    const aioIdx = bodyText.indexOf('AI による概要');
+    if (aioIdx >= 0) {
+      aioText = bodyText.substring(aioIdx, Math.min(bodyText.length, aioIdx + 1000));
+    }
+  }
+  
+  // Organic results
+  const results = await page.$$eval('a h3', els => els.slice(0, 10).map((h3, i) => ({
+    rank: i + 1,
+    title: h3.textContent || '',
+    url: h3.closest('a')?.href || ''
+  })));
+  
+  // PAA (People Also Ask)
+  let paa = [];
+  try {
+    paa = await page.$$eval('[data-sgrd] [data-q]', els => els.map(el => el.getAttribute('data-q')));
+  } catch(e) {}
+  
+  return JSON.stringify({ aioStatus, aioText, results, paa });
+}
+```
+
+4. Take screenshot (fullPage).
+5. Save raw response text.
+
+### Parsing
+
+- target: "google_aio"
+- surface: "web_ui"
+- input_type: "search_query"
+- device: "desktop"
+- web_access_enabled: true
+- prior_context_present: false
+
+For the observation:
+- If aioStatus is "displayed": check aioText for brand mentions. Set brand_mentioned based on AIO text content.
+- If aioStatus is "not_available" or "generation_failed": brand_mentioned = false for AIO, but still record organic rank.
+- brand_rank: find brand.domain in organic results URLs. Record the organic position.
+- status: "success" (page loaded). Use status_detail to record aioStatus value.
+
+### Additional Fields (AIO-specific)
+
+Store AIO-specific data in the observation's status_detail field:
+```
+status_detail: "aio_status={aioStatus}, organic_rank={rank}, paa_count={paa.length}"
+```
+
+Store PAA questions in raw_text file along with AIO text.
 
 ## Brand Matching (Placeholder)
 
