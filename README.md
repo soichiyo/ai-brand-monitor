@@ -26,9 +26,9 @@ ChatGPT・Gemini・Perplexity・Claude・Google AIモードに対して「おす
 1. このリポジトリを `.claude/skills/` にクローンします:
 ```bash
 cd ~/.claude/skills
-git clone https://github.com/YOUR_USERNAME/ai-brand-monitor.git
+git clone https://github.com/soichiyo/ai-brand-monitor.git
 ```
-（`YOUR_USERNAME` は自分のGitHubユーザー名に置き換えてください）
+（`soichiyo` は自分のGitHubユーザー名に置き換えてください）
 
 2. 設定ファイルをコピーして、自社の情報に書き換えます:
 ```bash
