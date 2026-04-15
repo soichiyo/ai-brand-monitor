@@ -791,3 +791,60 @@ Header: mention_id,observation_id,entity_name,entity_type,mention_context,rank_i
 Same jq pattern for entity_mentions.jsonl.
 
 Note: CSV export requires `jq` to be installed. If jq is not available, skip CSV export and note in the run summary.
+
+## Interactive Init (/ai-brand-monitor init)
+
+When user runs `/ai-brand-monitor init`:
+
+1. Ask: "What is your brand name?" → brand.name
+2. Ask: "What is your brand's domain?" → brand.domain
+3. Ask: "Any alternative names or spellings? (comma-separated, or skip)" → brand.aliases
+4. Ask: "Who are your main competitors? (name:domain format, comma-separated, or skip)" → competitors
+5. Ask: "What language should AI responses be in?" → locale.language (default: ja)
+6. Ask: "What country for Google search?" → locale.country (default: JP)
+7. Ask: "Enter your search queries (one per line, empty line to finish)" → queries
+8. Ask: "Enter your LLM prompts with categories. Format: category|prompt text (one per line, empty to finish)" → prompts
+9. Ask: "Which platforms to monitor?" → targets (suggest all 6, explain stable vs experimental)
+10. Write config.yaml to the skill directory
+11. Confirm: "Config saved! Run `/ai-brand-monitor run` to start your first observation."
+
+## Google Sheets Export (Optional)
+
+When `output.sheets.enabled: true` in config:
+
+1. Check if `gog` CLI is available: `which gog`
+2. If not available: warn "Google Sheets export requires gog CLI. Skipping. Install from: https://github.com/..."
+3. If available:
+   - If `output.sheets.spreadsheet_id` is set: append to existing spreadsheet
+   - If not set: create new spreadsheet titled "AI Brand Monitor - {brand.name}"
+   - Write observations to "Observations" tab
+   - Write citations to "Citations" tab
+   - Write entity mentions to "Entity Mentions" tab
+4. Report spreadsheet URL to user
+
+## Run Summary Output
+
+At the end of a run, output to the user:
+
+```
+=== AI Brand Monitor Run Complete ===
+
+Run ID: {run_id}
+Duration: {minutes}m
+
+Platform Results:
+  ✅ google_ai_mode: {n} observations
+  ✅ perplexity: {n} observations
+  ✅ claude: {n} observations
+  ✅ chatgpt_web: {n} observations
+  ⚠️ gemini_web: skipped (login_required)
+  ✅ google_aio: {n} observations
+
+Brand Mention Rate: {x}/{y} ({z}%)
+Brand Citation Rate: {a}/{b} ({c}%)
+Top Competitor: {name} ({count} mentions)
+
+📄 Report: {output_dir}/{run_id}/reports/report.md
+📊 CSV: {output_dir}/{run_id}/csv/
+📸 Screenshots: {output_dir}/{run_id}/screenshots/
+```
