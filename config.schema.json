@@ -22,7 +22,7 @@
         },
         "aliases": {
           "type": "array",
-          "items": { "type": "string" },
+          "items": { "type": "string", "minLength": 1 },
           "description": "Alternative names, abbreviations, or spellings to also match."
         }
       },
@@ -37,10 +37,12 @@
         "properties": {
           "name": {
             "type": "string",
+            "minLength": 1,
             "description": "Competitor brand name."
           },
           "domain": {
             "type": "string",
+            "minLength": 1,
             "description": "Competitor domain."
           }
         },
@@ -68,7 +70,7 @@
       "type": "array",
       "description": "Search queries to send to AI surfaces.",
       "minItems": 1,
-      "items": { "type": "string" }
+      "items": { "type": "string", "minLength": 1 }
     },
     "prompts": {
       "type": "array",
@@ -80,10 +82,12 @@
         "properties": {
           "id": {
             "type": "string",
+            "minLength": 1,
             "description": "Unique identifier for this prompt."
           },
           "text": {
             "type": "string",
+            "minLength": 1,
             "description": "The prompt text to send to AI surfaces."
           },
           "category": {

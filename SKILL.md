@@ -11,9 +11,10 @@ Activate when user says: /ai-brand-monitor, "run brand monitor", "check AI visib
 
 ## Prerequisites
 
-- Playwright MCP plugin must be enabled in Claude Code (provides browser_navigate, browser_run_code, browser_take_screenshot, browser_resize tools)
+- Playwright MCP plugin must be enabled in Claude Code (provides browser automation capabilities: page navigation, JavaScript execution, screenshots, viewport resizing)
+- `jq` must be installed for CSV export (`brew install jq` or equivalent)
 - For Gemini Web target: user must be logged into Google in the Playwright browser
-- For Google Sheets export (optional): gog CLI must be installed
+- For Google Sheets export (optional): gog CLI (Google API CLI tool) must be installed
 
 ## Commands
 
