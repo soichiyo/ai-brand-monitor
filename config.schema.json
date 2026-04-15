@@ -1,0 +1,150 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ai-brand-monitor config",
+  "description": "Configuration for monitoring brand visibility across AI search surfaces.",
+  "type": "object",
+  "required": ["brand", "queries", "prompts", "targets"],
+  "properties": {
+    "brand": {
+      "type": "object",
+      "description": "Your brand information.",
+      "required": ["name", "domain"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Primary brand name used for matching in AI responses."
+        },
+        "domain": {
+          "type": "string",
+          "description": "Primary domain (e.g. example.com). Used to detect citation links."
+        },
+        "aliases": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Alternative names, abbreviations, or spellings to also match."
+        }
+      },
+      "additionalProperties": false
+    },
+    "competitors": {
+      "type": "array",
+      "description": "Competitor brands to track alongside yours.",
+      "items": {
+        "type": "object",
+        "required": ["name", "domain"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Competitor brand name."
+          },
+          "domain": {
+            "type": "string",
+            "description": "Competitor domain."
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "locale": {
+      "type": "object",
+      "description": "Language and country settings for queries.",
+      "properties": {
+        "language": {
+          "type": "string",
+          "default": "ja",
+          "description": "ISO 639-1 language code."
+        },
+        "country": {
+          "type": "string",
+          "default": "JP",
+          "description": "ISO 3166-1 alpha-2 country code."
+        }
+      },
+      "additionalProperties": false
+    },
+    "queries": {
+      "type": "array",
+      "description": "Search queries to send to AI surfaces.",
+      "minItems": 1,
+      "items": { "type": "string" }
+    },
+    "prompts": {
+      "type": "array",
+      "description": "Structured prompts with category metadata.",
+      "items": {
+        "type": "object",
+        "required": ["id", "text", "category"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for this prompt."
+          },
+          "text": {
+            "type": "string",
+            "description": "The prompt text to send to AI surfaces."
+          },
+          "category": {
+            "type": "string",
+            "enum": ["purchase_intent", "info_gathering", "brand_direct", "neutral"],
+            "description": "Intent category for analysis grouping."
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "targets": {
+      "type": "array",
+      "description": "AI surfaces to monitor.",
+      "items": {
+        "type": "string",
+        "enum": [
+          "google_aio",
+          "google_ai_mode",
+          "perplexity",
+          "chatgpt_web",
+          "gemini_web",
+          "claude"
+        ]
+      }
+    },
+    "output": {
+      "type": "object",
+      "description": "Output format and destination settings.",
+      "properties": {
+        "dir": {
+          "type": "string",
+          "description": "Output directory path (relative to config file)."
+        },
+        "markdown": {
+          "type": "boolean",
+          "description": "Generate Markdown report."
+        },
+        "csv": {
+          "type": "boolean",
+          "description": "Generate CSV export."
+        },
+        "jsonl": {
+          "type": "boolean",
+          "description": "Generate JSONL raw data."
+        },
+        "screenshots": {
+          "type": "boolean",
+          "description": "Capture screenshots of AI responses."
+        },
+        "sheets": {
+          "type": "object",
+          "description": "Google Sheets export settings.",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "description": "Enable Google Sheets export."
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,94 @@
+# ai-brand-monitor 設定ファイル
+# このファイルを config.yaml にコピーして編集してください。
+# cp examples/config.example.yaml config.yaml
+
+# --- ブランド情報 ---
+# name: AI応答内でマッチングに使うブランド名
+# domain: 引用リンク検出に使うドメイン
+# aliases: 略称・別表記など（部分一致で検出）
+brand:
+  name: "アクメカード"
+  domain: "acme-card.example.com"
+  aliases:
+    - "Acme Card"
+    - "ACME CARD"
+    - "acmecard"
+
+# --- 競合ブランド ---
+# 自社と同じ検索結果に出てくる競合を登録
+# AI応答内での言及頻度・順位を比較できる
+competitors:
+  - name: "ベータカード"
+    domain: "beta-card.example.com"
+  - name: "ガンマカード"
+    domain: "gamma-card.example.com"
+
+# --- ロケール ---
+# language: 検索・プロンプトの言語（ISO 639-1）
+# country: 地域設定（ISO 3166-1 alpha-2）
+locale:
+  language: "ja"
+  country: "JP"
+
+# --- 検索クエリ ---
+# Google AIO / AI Mode に送る検索クエリ
+# ユーザーが実際に検索しそうなフレーズを設定する
+queries:
+  - "法人向け 名刺 デジタル おすすめ"
+  - "デジタル名刺 比較 2026"
+  - "アクメカード 評判"
+
+# --- プロンプト ---
+# ChatGPT / Gemini / Claude / Perplexity に送る構造化プロンプト
+# category でグルーピングし、意図別に分析できる
+#
+# category の種類:
+#   purchase_intent  - 購入・導入を検討する意図
+#   info_gathering   - 情報収集・比較の意図
+#   brand_direct     - ブランド名を直接指定した質問
+#   neutral          - 特定意図のない一般的な質問
+prompts:
+  - id: "purchase-digital-card"
+    text: "法人向けデジタル名刺サービスを導入したいです。おすすめのサービスを教えてください。"
+    category: purchase_intent
+
+  - id: "brand-review"
+    text: "アクメカードというデジタル名刺サービスについて教えてください。評判や特徴を知りたいです。"
+    category: brand_direct
+
+  - id: "compare-services"
+    text: "デジタル名刺サービスの主要なサービスを比較して、それぞれの特徴を教えてください。"
+    category: info_gathering
+
+# --- 対象AI ---
+# モニタリングするAIサーフェスを選択
+# 利用可能な値:
+#   google_aio      - Google AI Overview（検索結果上部のAI要約）
+#   google_ai_mode  - Google AI Mode（対話型検索）
+#   perplexity      - Perplexity（Web検索AI）
+#   chatgpt_web     - ChatGPT Web版
+#   gemini_web      - Gemini Web版
+#   claude          - Claude Web版
+targets:
+  - google_aio
+  - google_ai_mode
+  - perplexity
+  - chatgpt_web
+  - gemini_web
+  - claude
+
+# --- 出力設定 ---
+# dir: 出力先ディレクトリ（config.yaml からの相対パス）
+# markdown: Markdownレポートを生成する
+# csv: CSV形式でエクスポートする
+# jsonl: JSONL形式で生データを保存する
+# screenshots: AI応答のスクリーンショットを取得する
+# sheets.enabled: Google Sheetsへのエクスポートを有効にする
+output:
+  dir: "outputs/"
+  markdown: true
+  csv: true
+  jsonl: true
+  screenshots: true
+  sheets:
+    enabled: false
