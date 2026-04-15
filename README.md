@@ -11,7 +11,7 @@ This Claude Code Skill runs observations across 6 AI platforms and generates a s
 - Whether your brand is mentioned in AI-generated responses
 - Your position relative to competitors
 - Which sources cite your website (Google AI Mode citation sidebar)
-- How accuracy of AI descriptions of your brand
+- Accuracy of AI descriptions of your brand
 - Changes between observation runs
 
 ## Quick Start
@@ -19,14 +19,15 @@ This Claude Code Skill runs observations across 6 AI platforms and generates a s
 ### Prerequisites
 
 - [Claude Code](https://docs.anthropic.com/en/docs/claude-code) installed
-- [Playwright MCP plugin](https://github.com/anthropics/claude-code-plugins) enabled in Claude Code
+- Playwright MCP plugin enabled in Claude Code (see Claude Code documentation)
 
 ### Setup (5 minutes)
 
 1. Clone into your Claude Code skills directory:
    ```bash
    cd ~/.claude/skills
-   git clone https://github.com/anthropics/ai-brand-monitor.git
+   # Replace YOUR_USERNAME with your GitHub username
+   git clone https://github.com/YOUR_USERNAME/ai-brand-monitor.git
    ```
 
 2. Copy and edit the config:
@@ -101,7 +102,7 @@ targets:                        # Platforms to monitor
 | Platform | Method | Login | What It Captures |
 |----------|--------|-------|-----------------|
 | Google AI Mode | Playwright | No | AI response, citation sidebar ranking, inline badges |
-| Google AIO | Playwright | No | AIO display, brand citation, organic rank, PAA |
+| Google AIO | Playwright | No | AIO display, brand mention, organic rank, PAA |
 | Perplexity | Playwright | No | AI response, brand mention, competitor analysis |
 | ChatGPT | Playwright | No* | AI response, brand mention analysis |
 | Claude | Agent spawn | No | AI response from training data (no web search) |
@@ -135,7 +136,7 @@ outputs/
 
 ### Google Sheets (Optional)
 
-Set `output.sheets.enabled: true` in config. Requires [gog CLI](https://github.com/...) for Google Sheets API access.
+Set `output.sheets.enabled: true` in config. Requires gog CLI (Google API CLI tool) for Google Sheets API access.
 
 ## Measurement Caveats
 

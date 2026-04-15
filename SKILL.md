@@ -9,6 +9,12 @@ description: Monitor brand visibility across AI search surfaces (Google AI Mode,
 
 Activate when user says: /ai-brand-monitor, "run brand monitor", "check AI visibility", "AI brand observation"
 
+## Prerequisites
+
+- Playwright MCP plugin must be enabled in Claude Code (provides browser_navigate, browser_run_code, browser_take_screenshot, browser_resize tools)
+- For Gemini Web target: user must be logged into Google in the Playwright browser
+- For Google Sheets export (optional): gog CLI must be installed
+
 ## Commands
 
 - `/ai-brand-monitor run` — Run full observation
@@ -33,10 +39,6 @@ Activate when user says: /ai-brand-monitor, "run brand monitor", "check AI visib
    - `locale.language` → "ja"
    - `locale.country` → "JP"
    - `output.dir` → "./outputs"
-   - `output.markdown` → true
-   - `output.csv` → true
-   - `output.jsonl` → true
-   - `output.screenshots` → true
 
 ### Step 2: Initialize Run
 
@@ -115,6 +117,7 @@ Each observation is one JSON line in `raw/observations.jsonl`:
   "brand_rank": 1,
   "brand_context": "プレーリーカード: デザイン性が高く...",
   "accuracy": "accurate",
+  "accuracy_rationale": "NFC型デジタル名刺サービスとして正しく説明。価格・機能とも正確",
   "inaccuracy_detail": "",
   "web_access_enabled": true,
   "prior_context_present": false,
@@ -181,23 +184,15 @@ Stability: stable
 
 For each query in config.queries:
 
-1. Resize browser:
-```
-mcp__plugin_playwright_playwright__browser_resize(width: 1280, height: 900)
-```
+1. Resize the Playwright browser to 1280x900 (use the browser_resize tool).
 
-2. Navigate to AI Mode:
-```
-mcp__plugin_playwright_playwright__browser_navigate(
-  url: "https://www.google.co.jp/search?q={encoded_query}&hl={config.locale.language}&gl={config.locale.country}&udm=50"
-)
-```
+2. Navigate the Playwright browser to AI Mode (use the browser_navigate tool):
+   URL: `https://www.google.co.jp/search?q={encoded_query}&hl={config.locale.language}&gl={config.locale.country}&udm=50`
 
 3. Wait for AI response generation (5 seconds).
 
-4. Extract main content and brand detection:
+4. Extract main content and brand detection. Execute JavaScript in the browser page (use the browser_run_code tool):
 ```javascript
-// Use mcp__plugin_playwright_playwright__browser_run_code
 async (page) => {
   await page.waitForTimeout(5000);
   const bodyText = await page.evaluate(() => document.body.innerText);
@@ -218,9 +213,8 @@ async (page) => {
 }
 ```
 
-5. Extract citation sidebar (right panel source ranking):
+5. Extract citation sidebar (right panel source ranking). Execute JavaScript in the browser page (use the browser_run_code tool):
 ```javascript
-// Use mcp__plugin_playwright_playwright__browser_run_code
 async (page) => {
   const rightTexts = await page.evaluate(() => {
     const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
@@ -251,14 +245,7 @@ async (page) => {
 }
 ```
 
-6. Take screenshot:
-```
-mcp__plugin_playwright_playwright__browser_take_screenshot(
-  type: "png",
-  fullPage: true,
-  filename: "{RUN_DIR}/screenshots/{observation_id}.png"
-)
-```
+6. Take a screenshot of the page (use the browser_take_screenshot tool). Save as PNG, fullPage, to `{RUN_DIR}/screenshots/{observation_id}.png`.
 
 7. Save raw response text to `{RUN_DIR}/raw_text/{observation_id}.txt` using Write tool.
 
@@ -318,12 +305,8 @@ Stability: stable
 
 For each prompt in config.prompts:
 
-1. Navigate:
-```
-mcp__plugin_playwright_playwright__browser_navigate(
-  url: "https://www.perplexity.ai/search?q={encoded_prompt_text}"
-)
-```
+1. Navigate the Playwright browser to Perplexity (use the browser_navigate tool):
+   URL: `https://www.perplexity.ai/search?q={encoded_prompt_text}`
 
 2. Wait 10 seconds for response generation.
 
@@ -372,14 +355,9 @@ Stability: stable
 
 For each prompt in config.prompts:
 
-1. Spawn a clean agent with NO project context:
-```
-Agent(
-  description: "Brand observation: {prompt.id}",
-  subagent_type: "general-purpose",
-  prompt: "You are a fresh assistant with NO prior context about any brand or service. Do NOT read any project files. Answer the following question naturally in {config.locale.language}.\n\nQuestion: {prompt.text}\n\nProvide a helpful, detailed answer."
-)
-```
+1. Spawn a fresh Agent subagent with NO project context (use the Agent tool with subagent_type: general-purpose):
+   - description: "Brand observation: {prompt.id}"
+   - prompt: "You are a fresh assistant with NO prior context about any brand or service. Do NOT read any project files. Answer the following question naturally in {config.locale.language}.\n\nQuestion: {prompt.text}\n\nProvide a helpful, detailed answer."
 
 2. Capture the agent's response text.
 3. No screenshot needed (no browser).
@@ -416,10 +394,8 @@ Stability: stable
 
 For each prompt in config.prompts:
 
-1. Navigate to new chat:
-```
-mcp__plugin_playwright_playwright__browser_navigate(url: "https://chatgpt.com/")
-```
+1. Navigate the Playwright browser to ChatGPT (use the browser_navigate tool):
+   URL: `https://chatgpt.com/`
 
 2. Wait 3 seconds for page load.
 
@@ -485,10 +461,8 @@ Stability: experimental
 
 For each prompt in config.prompts:
 
-1. Navigate:
-```
-mcp__plugin_playwright_playwright__browser_navigate(url: "https://gemini.google.com/app")
-```
+1. Navigate the Playwright browser to Gemini (use the browser_navigate tool):
+   URL: `https://gemini.google.com/app`
 
 2. Wait 3 seconds. Check if logged in:
 ```javascript
@@ -552,12 +526,8 @@ Stability: stable
 
 For each query in config.queries:
 
-1. Navigate to regular Google Search:
-```
-mcp__plugin_playwright_playwright__browser_navigate(
-  url: "https://www.google.co.jp/search?q={encoded_query}&hl={config.locale.language}&gl={config.locale.country}"
-)
-```
+1. Navigate the Playwright browser to Google Search (use the browser_navigate tool):
+   URL: `https://www.google.co.jp/search?q={encoded_query}&hl={config.locale.language}&gl={config.locale.country}`
 
 2. Wait 3 seconds.
 
@@ -660,6 +630,20 @@ For services mentioned in responses that are NOT the brand and NOT configured co
 1. Look for proper nouns near keywords like "サービス", "アプリ", "カード", "ツール", or English service names (capitalized words)
 2. Record as `entity_type: "discovered_competitor"` in entity_mentions
 3. Extract mention_context (100 chars) and rank_in_response (order of appearance)
+
+### Accuracy Evaluation
+
+When the brand is mentioned, evaluate accuracy of the AI's description:
+
+- `accurate`: The AI correctly identifies the brand's core product/service and key features
+- `partially_inaccurate`: The AI identifies the brand but gets some details wrong (e.g., wrong pricing, wrong feature)
+- `inaccurate`: The AI fundamentally misidentifies the brand (e.g., wrong product category, hallucinated facts)
+- `n/a`: Brand is not mentioned
+
+Record a one-line rationale in `accuracy_rationale`. Examples:
+- "NFC型デジタル名刺サービスとして正しく説明。価格・機能とも正確"
+- "デジタル名刺サービスだが、価格が異なる（実際は4,480円、AIは3,000円と記載）"
+- "架空の銀行クレジットカードとして完全に誤認"
 
 ### Prompt Category Handling
 
@@ -813,7 +797,7 @@ When user runs `/ai-brand-monitor init`:
 When `output.sheets.enabled: true` in config:
 
 1. Check if `gog` CLI is available: `which gog`
-2. If not available: warn "Google Sheets export requires gog CLI. Skipping. Install from: https://github.com/..."
+2. If not available: warn "Google Sheets export requires gog CLI (Google API CLI tool). Skipping."
 3. If available:
    - If `output.sheets.spreadsheet_id` is set: append to existing spreadsheet
    - If not set: create new spreadsheet titled "AI Brand Monitor - {brand.name}"

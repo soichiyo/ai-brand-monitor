@@ -68,7 +68,7 @@ prompts:
 #   perplexity      - Perplexity（Web検索AI）
 #   chatgpt_web     - ChatGPT Web版
 #   gemini_web      - Gemini Web版
-#   claude          - Claude Web版
+#   claude          - Claude Agent（訓練データのみ、Web検索なし）
 targets:
   - google_aio
   - google_ai_mode
@@ -79,16 +79,9 @@ targets:
 
 # --- 出力設定 ---
 # dir: 出力先ディレクトリ（config.yaml からの相対パス）
-# markdown: Markdownレポートを生成する
-# csv: CSV形式でエクスポートする
-# jsonl: JSONL形式で生データを保存する
-# screenshots: AI応答のスクリーンショットを取得する
+# All output formats (JSONL, CSV, Markdown report, screenshots) are always generated
 # sheets.enabled: Google Sheetsへのエクスポートを有効にする
 output:
   dir: "outputs/"
-  markdown: true
-  csv: true
-  jsonl: true
-  screenshots: true
   sheets:
     enabled: false

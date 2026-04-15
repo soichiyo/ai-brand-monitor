@@ -12,10 +12,12 @@
       "properties": {
         "name": {
           "type": "string",
+          "minLength": 1,
           "description": "Primary brand name used for matching in AI responses."
         },
         "domain": {
           "type": "string",
+          "minLength": 1,
           "description": "Primary domain (e.g. example.com). Used to detect citation links."
         },
         "aliases": {
@@ -71,6 +73,7 @@
     "prompts": {
       "type": "array",
       "description": "Structured prompts with category metadata.",
+      "minItems": 1,
       "items": {
         "type": "object",
         "required": ["id", "text", "category"],
@@ -95,6 +98,8 @@
     "targets": {
       "type": "array",
       "description": "AI surfaces to monitor.",
+      "minItems": 1,
+      "uniqueItems": true,
       "items": {
         "type": "string",
         "enum": [
@@ -115,22 +120,6 @@
           "type": "string",
           "description": "Output directory path (relative to config file)."
         },
-        "markdown": {
-          "type": "boolean",
-          "description": "Generate Markdown report."
-        },
-        "csv": {
-          "type": "boolean",
-          "description": "Generate CSV export."
-        },
-        "jsonl": {
-          "type": "boolean",
-          "description": "Generate JSONL raw data."
-        },
-        "screenshots": {
-          "type": "boolean",
-          "description": "Capture screenshots of AI responses."
-        },
         "sheets": {
           "type": "object",
           "description": "Google Sheets export settings.",
@@ -138,6 +127,10 @@
             "enabled": {
               "type": "boolean",
               "description": "Enable Google Sheets export."
+            },
+            "spreadsheet_id": {
+              "type": "string",
+              "description": "Existing Google Sheets spreadsheet ID to append to. If omitted, a new spreadsheet is created."
             }
           },
           "additionalProperties": false
