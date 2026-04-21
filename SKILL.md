@@ -55,7 +55,10 @@ description: 主要なAI検索エンジン（Google AIモード/AIO, ChatGPT, Ge
 
 2. 各入力（クエリまたはプロンプト）の処理：
    - 各ターゲットのアダプターを呼び出します（詳細は `adapters.md` を参照）。
-   - 成功時：JSONLへの書き込みとアーティファクトの保存（詳細は `data-model.md` を参照）。
+   - 成功時：以下の3つを必ず保存します：
+     a. 観測レコードを `raw/observations.jsonl` に追記
+     b. 生テキストを `raw_text/{observation_id}.txt` に保存（Write tool）
+     c. `response_text_hash` に SHA256 を記録（`echo -n "text" | shasum -a 256 | cut -d' ' -f1`）
    - 失敗時：エラー状態を記録し、ログ警告を出して次へ進みます。
 
 3. 進捗報告: 「{target} を実行中... {n}/{total} 完了」と表示します。

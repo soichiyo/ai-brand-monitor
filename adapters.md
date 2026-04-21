@@ -203,9 +203,11 @@ For each prompt in config.prompts:
 - prior_context_present: false (clean agent)
 - status: "success" if response is non-empty
 
-### Notes
+### Execution Rules (MUST follow)
 
+- Each prompt MUST be a separate Agent spawn. NEVER batch multiple prompts into one agent call. Batching reduces mention rates by allowing the agent to diversify answers across questions
 - Run prompts sequentially (not parallel) to avoid context bleed between agents
+- Save each agent's raw response to `{RUN_DIR}/raw_text/{observation_id}.txt`
 - Agent responses are text-only, no screenshots
 - This tests Claude's training data knowledge, NOT Claude.ai web search
 - Add caveat in report: "Claude agent observation ≠ Claude.ai consumer web experience"
@@ -319,13 +321,33 @@ async (page) => {
   
   await page.waitForTimeout(25000); // Gemini is slower
   
-  const text = await page.evaluate(() => document.body.innerText);
+  // Extract ONLY the latest model response, not sidebar/navigation
+  const text = await page.evaluate(() => {
+    // Gemini renders responses in message-content containers
+    const responses = document.querySelectorAll(
+      'message-content, .response-container, .model-response-text, [class*="response"]'
+    );
+    if (responses.length > 0) {
+      return responses[responses.length - 1].innerText;
+    }
+    // Fallback: get main content area, excluding sidebar
+    const main = document.querySelector('main, [role="main"], .conversation-container');
+    if (main) return main.innerText;
+    // Last resort: full body (will be flagged as potentially polluted)
+    return document.body.innerText;
+  });
   return text;
 }
 ```
 
 5. Take screenshot.
 6. Save raw response text.
+
+### Extraction Quality
+
+- The extraction targets the latest model response container only, avoiding sidebar chat history
+- If the selector falls back to `document.body.innerText`, mark `status_detail` with `extraction_fallback=body` to flag potential sidebar pollution
+- Brand matches found only in sidebar/navigation text (not in the response body) should be excluded from mention counting
 
 ### Parsing
 
