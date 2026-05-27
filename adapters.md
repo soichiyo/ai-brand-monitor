@@ -97,7 +97,7 @@ Citation records:
 Parse the citationTexts array into citation entries. The pattern in the sidebar is:
 - Line with article title (longer text, often with "..." truncation)
 - Line with date or description snippet
-- Line with site name (shorter, like "プレーリーカード", "SKYPCE", "Eight")
+- Line with site name (shorter, like "アクメカード", "SKYPCE", "Eight")
 
 Group every 2-3 lines as one citation card. For each:
 - rank: position (1-based)
