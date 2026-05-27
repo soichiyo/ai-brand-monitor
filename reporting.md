@@ -193,7 +193,7 @@ When user runs `/ai-brand-monitor init`:
 10. config.yaml をスキルのディレクトリに保存
 11. 確認: "設定を保存しました！`/ai-brand-monitor run` で最初の観測を始められます。"
 
-## Google Sheets Export (Optional)
+## Google Sheets Export
 
 When `output.sheets.enabled: true` in config:
 
@@ -207,7 +207,38 @@ When `output.sheets.enabled: true` in config:
    - Write entity mentions to "Entity Mentions" tab
 4. Report spreadsheet URL to user
 
-## Run Summary Output
+### Write Protocol for Canonical Tabs
+
+When maintaining canonical observation tabs in Sheets (especially if you later expand beyond the default 3 tabs), use **read+merge+sort+replace** instead of simple append:
+
+1. Read all existing rows from the target tab.
+2. Merge new observations with existing rows, using a composite key (e.g., `(date, query or prompt, device)`). Newer rows win on key collision.
+3. Sort the merged dataset chronologically (date ascending, then query/prompt ascending).
+4. Clear the tab and rewrite the entire sorted dataset.
+
+**Why not append?** Append-based updates fail when blank rows exist from prior manual editing or when timestamps are out of order. A full read+merge+sort+replace guarantees chronological integrity and eliminates drift.
+
+### Axis Projection Guidance
+
+Design your Sheets tabs to project onto a single axis:
+
+- **Search-query axis** (Google AIO, Google AI Mode): These are responses to `config.queries`. Keep them in a "Search Observations" tab.
+- **Prompt axis** (Perplexity, ChatGPT, Gemini, Claude): These are responses to `config.prompts`. Keep them in a "LLM Observations" tab.
+
+Do not mix query-axis observations (e.g., AI Mode) into prompt-axis tabs. `google_ai_mode` belongs with search observations because it is query-driven, even though it uses an LLM to generate the answer.
+
+### Label Mapping Discipline
+
+If you are migrating from an existing manually-operated spreadsheet, separate your internal enum values from user-facing display labels:
+
+1. Define a canonical label map in your skill or script (e.g., `perplexity` → `Perplexity`, `claude` → `Claude`).
+2. When reading existing rows, normalize old or experimental labels (e.g., `Claude (agent)`, `Gemini`) to canonical forms before merging.
+3. When writing, always output canonical labels. Do not let ad-hoc labels from manual editing pollute downstream tabs.
+4. Store the label map alongside your config or in a dedicated normalization script so it is versioned with the skill.
+
+This prevents "label drift" where the same platform appears under multiple names across runs.
+
+### Run Summary Output
 
 At the end of a run, output to the user:
 
